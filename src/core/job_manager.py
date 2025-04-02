@@ -87,7 +87,7 @@ class JobManager:
             raise
     
     def get_job_status(self, db: Session, job_id: str) -> Optional[Dict[str, Any]]:
-        job = db.query(Job).filter(job.id == job_id).first()
+        job = db.query(Job).filter(Job.id == job_id).first()
         if not job:
             return None
         

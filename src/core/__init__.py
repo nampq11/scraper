@@ -1,7 +1,7 @@
-from . import crawl, database, job_manager, scraper
+from . import crawler, database, job_manager, scraper
 
 __all__ = [
-    'crawl',
+    'crawler',
     'database',
     'job_manager',
     'scraper',

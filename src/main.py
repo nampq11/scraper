@@ -1,6 +1,6 @@
 from fastapi import APIRouter, FastAPI
 
-from src.routes import crawl  # Changed back to absolute import
+from src.routes import crawl, scrape, jobs, history, map
 
 app = FastAPI(
     title="Scraper API",
@@ -22,6 +22,10 @@ app = FastAPI(
 api_router = APIRouter(prefix="/api")
 
 api_router.include_router(crawl.router, prefix="/crawl", tags=["crawling"])
+api_router.include_router(scrape.router, prefix="/scrape", tags=["scraping"])
+api_router.include_router(jobs.router, prefix="/jobs", tags=["jobs"])
+api_router.include_router(history.router, prefix="/history", tags=["history"])
+api_router.include_router(map.router, prefix="/map", tags=["mapping"])
 
 app.include_router(api_router)
 

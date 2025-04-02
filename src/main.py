@@ -1,4 +1,6 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter, FastAPI
+
+from src.routes import crawl  # Changed back to absolute import
 
 app = FastAPI(
     title="Scraper API",
@@ -19,12 +21,11 @@ app = FastAPI(
 
 api_router = APIRouter(prefix="/api")
 
+api_router.include_router(crawl.router, prefix="/crawl", tags=["crawling"])
+
 app.include_router(api_router)
+
 
 @app.get("/")
 async def root():
-    return {
-        "status": "running",
-        "docs": "/api/docs",
-        "redoc": "/api/redoc"
-    }
+    return {"status": "running", "docs": "/api/docs", "redoc": "/api/redoc"}

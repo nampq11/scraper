@@ -26,9 +26,9 @@ class Crawler:
 
     def _is_same_domain(self, url1: str, url2: str, include_subdomains: bool = False) -> bool:
         """Check if two URLs belong to the same domain."""
+        print("i'm here 3")
         parsed1 = urlparse(url1)
         parsed2 = urlparse(url2)
-
         if include_subdomains:
             domain1 = ".".join(parsed1.netloc.split(".")[-2:])
             domain2 = ".".join(parsed2.netloc.split(".")[-2:])
@@ -57,9 +57,8 @@ class Crawler:
                 - include_backwards: Allow crawling to parent directories
                 - include_subdomains: Allow crawling to subdomains
         """
-        if not url or not url.startswith("http://", "https://"):
+        if not url or not url.startswith(("http://", "https://")):
             return False
-
         include_subdomains = options.get("include_subdomains", False)
         if not options.get("allow_backwards", False) and not self._is_same_domain(url, base_url, include_subdomains):
             return False
@@ -72,6 +71,7 @@ class Crawler:
             return False
 
         path = urlparse(normalized).path
+
 
         if any(p in path.lower() for p in ["/cdn-cgi/", "/wp-admin/", "/wp-includes/", "/assets/", "/static/"]):
             return False
@@ -154,7 +154,7 @@ class Crawler:
             url: The starting URL
             options: Crawling options including:
                 - max_pages: Maximum link depth to crawl
-                - max_pages: Maximum number of pages to crawl
+                - max_pages: Maximum number of page"Crawling failed: slice indices must be integers or None or have an __index__ method"s to crawl
                 - formats: List of output formats
                 - page_options: Options for page processing
                 - exclude_paths: List of path patterns to include
@@ -198,10 +198,14 @@ class Crawler:
                 self.queue.clear()
 
                 for current_url in current_urls:
+                    print(f"Current URL: {current_url}")
+                    print(f"shoudl crawl: {self._should_crawl(current_url, url, options)}")
                     if not self._should_crawl(current_url, url, options):
                         continue
 
                     normalized = self._normalize_url(current_url)
+                    print(f"Visiting {normalized}")
+
                     self.visited.add(normalized)
 
                     try:
@@ -214,6 +218,8 @@ class Crawler:
                                 'structured_json': True
                             })
                         )
+
+                        print(f"Scraped {normalized}: {result}")
 
                         if result and not result.get('error'):
                             results['pages'][normalized] = {

@@ -1,11 +1,13 @@
-import sys
 import os
+import sys
+
 import pytest
 from fastapi.testclient import TestClient
 
 from src.main import app
 
 client = TestClient(app)
+
 
 def test_scape_endpoint():
     """Test basic scraping functionality."""
@@ -14,16 +16,14 @@ def test_scape_endpoint():
         json={
             "url": "https://quotes.toscrape.com/tag/humor/",
             "formats": ["markdown"],
-            "page_options": {
-                "extract_main_content": True,
-                "clean_markdown": True
-            }
-        }
+            "page_options": {"extract_main_content": True, "clean_markdown": True},
+        },
     )
     assert response.status_code == 200
     data = response.json()
     assert "job_id" in data
-    assert data['status'] == "pending"
+    assert data["status"] == "pending"
+
 
 def test_job_status():
     """Test job status retrieval."""
@@ -32,7 +32,7 @@ def test_job_status():
         json={
             "url": "https://quotes.toscrape.com/tag/humor/",
             "formats": ["markdown"],
-        }
+        },
     )
     job_id = response.json()["job_id"]
 
@@ -42,6 +42,7 @@ def test_job_status():
     assert "status" in data
     assert "operation" in data
     assert data["operation"] == "scrape"
+
 
 def test_history():
     """Test history endpoint with operation feild."""
@@ -55,4 +56,3 @@ def test_history():
         assert "operation" in job
         assert "status" in job
         assert "url" in job
-

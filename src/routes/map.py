@@ -6,6 +6,7 @@ from src.core.job_manager import JobManager
 router = APIRouter()
 job_manager = JobManager()
 
+
 @router.get("/{job_id}")
 async def get_job_status(
     job_id: str,
@@ -23,5 +24,5 @@ async def get_job_status(
     status = job_manager.get_job_status(db, job_id)
     if not status:
         raise HTTPException(status_code=404, detail="Job not found")
-    
+
     return status

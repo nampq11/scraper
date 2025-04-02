@@ -40,7 +40,7 @@ class ScrapedContent(Base):
 # Pydantic models for API interactions - using ConfigDict instead of class Config
 class JobBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     url: str
     operation: str
     formats: Optional[Dict[str, Any]] = None
@@ -62,7 +62,7 @@ class JobResponse(JobBase):
 
 class ScrapedContentBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     url: str
     content: Dict[str, Any]
     metadata_content: Dict[str, Any]

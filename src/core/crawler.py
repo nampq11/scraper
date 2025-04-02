@@ -8,6 +8,7 @@ from .scraper import Scraper
 
 logger = logging.getLogger(__name__)
 
+
 class Crawler:
     """Web crawler with configurable options and job tracking."""
 
@@ -72,7 +73,6 @@ class Crawler:
 
         path = urlparse(normalized).path
 
-
         if any(p in path.lower() for p in ["/cdn-cgi/", "/wp-admin/", "/wp-includes/", "/assets/", "/static/"]):
             return False
 
@@ -121,35 +121,32 @@ class Crawler:
         async with Scraper() as scraper:
             result = await scraper.scrape(
                 url=url,
-                formats=['markdown'],
-                page_options=options.get('page_options', {
-                    'include_links': True,
-                    'structured_json': True
-                })
+                formats=["markdown"],
+                page_options=options.get("page_options", {"include_links": True, "structured_json": True}),
             )
 
-            if result.get('error'):
-                raise Exception(result['error'])
-            
+            if result.get("error"):
+                raise Exception(result["error"])
+
             urls = {url}
-            if result.get('links'):
-                for link in result['links']:
-                    normalized = self._normalize_url(urljoin(url, link['url']))
+            if result.get("links"):
+                for link in result["links"]:
+                    normalized = self._normalize_url(urljoin(url, link["url"]))
                     if self._should_crawl(normalized, url, options):
                         urls.add(normalized)
-            
-            if options.get('search'):
-                urls = {u for u in urls if options['search'].lower() in u.lower()}
-            
-            if options.get('max_pages'):
-                urls = set(list(urls)[:options['max_pages']])
+
+            if options.get("search"):
+                urls = {u for u in urls if options["search"].lower() in u.lower()}
+
+            if options.get("max_pages"):
+                urls = set(list(urls)[: options["max_pages"]])
 
             return sorted(list(urls))
-    
+
     async def crawl(self, url: str, options: Dict = None) -> Dict[str, Any]:
         """
         Crawl a website starting from URL.
-        
+
         Args:
             url: The starting URL
             options: Crawling options including:
@@ -160,7 +157,7 @@ class Crawler:
                 - exclude_paths: List of path patterns to include
                 - include_only_paths: List of path patterns to include
                 - allow_backwards: Allow crawling to parent directories
-        
+
         Returns:
             Dictionary containing the crawled pages and metadata.
         """
@@ -170,12 +167,12 @@ class Crawler:
             max_depth = float("inf")
         elif not isinstance(max_depth, (int, float)) or max_depth < 0:
             raise ValueError("max_depth must be a non-negative number")
-        
+
         max_pages = options.get("max_pages")
         if max_pages is not None:
             if not isinstance(max_pages, int) or max_pages < 1:
                 raise ValueError("max_pages must be a positive integer")
-            
+
         self.visited.clear()
         self.queue.clear()
         self.queue.add(url)
@@ -186,8 +183,8 @@ class Crawler:
                 "start_url": url,
                 "total_pages": 0,
                 "start_time": datetime.now().isoformat(),
-                "options": options
-            }
+                "options": options,
+            },
         }
 
         current_depth = 0
@@ -212,40 +209,38 @@ class Crawler:
                         result = await scraper.scrape(
                             normalized,
                             formats=options.get("formats", ["markdown"]),
-                            page_options=options.get('page_options', {
-                                'extract_main_content': True,
-                                'include_links': True,
-                                'structured_json': True
-                            })
+                            page_options=options.get(
+                                "page_options",
+                                {"extract_main_content": True, "include_links": True, "structured_json": True},
+                            ),
                         )
 
                         print(f"Scraped {normalized}: {result}")
 
-                        if result and not result.get('error'):
-                            results['pages'][normalized] = {
-                                'content': result.get('content', {}),
-                                'metadata': result.get('metadata', {}),
-                                'links': result.get('links', []),
+                        if result and not result.get("error"):
+                            results["pages"][normalized] = {
+                                "content": result.get("content", {}),
+                                "metadata": result.get("metadata", {}),
+                                "links": result.get("links", []),
                             }
 
-                            if result.get('links'):
-                                for link in result['links']:
-                                    normalized_link = self._normalize_url(urljoin(current_url, link['url']))
+                            if result.get("links"):
+                                for link in result["links"]:
+                                    normalized_link = self._normalize_url(urljoin(current_url, link["url"]))
                                     if self._should_crawl(normalized_link, url, options):
                                         self.queue.add(normalized_link)
                     except Exception as e:
                         logger.error(f"Error scrapping {normalized}: {str(e)}")
-                        results['pages'][normalized] = {
-                            'error': str(e),
-                            'content': {},
-                            'metadata': {},
+                        results["pages"][normalized] = {
+                            "error": str(e),
+                            "content": {},
+                            "metadata": {},
                         }
-                    results['metadata']['total_pages'] += 1
-                
+                    results["metadata"]["total_pages"] += 1
+
                 current_depth += 1
-            
-        results['metadata']['end_time'] = datetime.now().isoformat()
-        results['metadata']['depth_reached'] = current_depth - 1
+
+        results["metadata"]["end_time"] = datetime.now().isoformat()
+        results["metadata"]["depth_reached"] = current_depth - 1
 
         return results
-                    

@@ -6,7 +6,8 @@ from src.core.database import get_db
 router = APIRouter()
 job_manager = JobManager()
 
-@router.get('/{job_id}')
+
+@router.get("/{job_id}")
 async def get_job_status(
     job_id: str,
     db: Session = Depends(get_db),

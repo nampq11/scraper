@@ -8,13 +8,14 @@ from datetime import datetime, timedelta
 router = APIRouter()
 job_manager = JobManager()
 
-@router.get('/')
+
+@router.get("/")
 async def get_history(
     limit: int = Query(20, gt=0, le=100),
     offset: int = Query(0, ge=0),
     status: Optional[str] = None,
     days: Optional[int] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     query = db.query(Job)
 
@@ -24,7 +25,7 @@ async def get_history(
     if days:
         since = datetime.now() - timedelta(days=days)
         query = query.filter(Job.created_at >= since)
-    
+
     total = query.count()
     jobs = query.order_by(Job.created_at.desc()).offset(offset).limit(limit).all()
 
@@ -39,24 +40,20 @@ async def get_history(
                 "status": job.status,
                 "url": job.url,
                 "created_at": job.created_at.isoformat(),
-                "completed_at": job.completed_at.isoformat() if job.completed_at else None
+                "completed_at": job.completed_at.isoformat() if job.completed_at else None,
             }
             for job in jobs
-        ]
+        ],
     }
 
-@router.get('/{job_id}/content')
-async def get_job_content(
-    job_id: str,
-    db: Session = Depends(get_db)
-):
-    content = db.query(ScrapedContent).filter(
-        ScrapedContent.job_id == job_id
-    ).first()
+
+@router.get("/{job_id}/content")
+async def get_job_content(job_id: str, db: Session = Depends(get_db)):
+    content = db.query(ScrapedContent).filter(ScrapedContent.job_id == job_id).first()
 
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
-    
+
     return {
         "url": content.url,
         "metadata": content.metadata_content,

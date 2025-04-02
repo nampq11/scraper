@@ -1,6 +1,6 @@
 from fastapi import APIRouter, FastAPI
 
-from src.routes import crawl, scrape, jobs, history, map
+from src.routes import crawl, history, jobs, map, scrape
 
 app = FastAPI(
     title="Scraper API",

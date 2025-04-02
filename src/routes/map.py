@@ -7,7 +7,7 @@ router = APIRouter()
 job_manager = JobManager()
 
 
-@router.get("/{job_id}")
+@router.post("/{job_id}")
 async def get_job_status(
     job_id: str,
     db: Session = Depends(get_db),

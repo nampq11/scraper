@@ -1,10 +1,12 @@
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel, HttpUrl
-from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
+
+from src.core.crawler import Crawler
 from src.core.database import get_db
 from src.core.job_manager import JobManager
-from src.core.crawler import Crawler
 
 router = APIRouter()
 job_manager = JobManager()
@@ -65,7 +67,11 @@ async def background_crawl(job_id: str, url: str, options: dict):
 
 
 @router.post("/async")
-async def start_crawl(request: CrawlRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def start_crawl(
+    request: CrawlRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     """
     Start an asynchronous crawl job.
 
@@ -84,7 +90,10 @@ async def start_crawl(request: CrawlRequest, background_tasks: BackgroundTasks, 
     )
 
     background_tasks.add_task(
-        background_crawl, job_id=job_id, url=str(request.url), options=request.options.model_dump(exclude_unset=True)
+        background_crawl,
+        job_id=job_id,
+        url=str(request.url),
+        options=request.options.model_dump(exclude_unset=True),
     )
 
     return {"job_id": job_id, "status": "pending", "url": str(request.url)}

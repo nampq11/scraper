@@ -1,9 +1,12 @@
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, Optional
 
-from sqlalchemy import JSON, Column, DateTime, String, create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base  # Updated import for SQLAlchemy 2.0 compatibility
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy import JSON, Column, DateTime, String, create_engine
+from sqlalchemy.orm import (
+    declarative_base,
+    sessionmaker,
+)  # Updated import for SQLAlchemy 2.0 compatibility
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 

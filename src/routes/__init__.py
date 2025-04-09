@@ -1,4 +1,4 @@
-from . import crawl, history, map, scrape, jobs
+from . import crawl, history, jobs, map, scrape
 
 __all__ = [
     "crawl",

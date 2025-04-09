@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 from typing import Any, Dict, Optional
 from uuid import uuid4
@@ -26,7 +25,12 @@ class JobManager:
             return str(data)
 
     def create_job(
-        self, db: Session, url: str, operation: str = "scrape", formats: list = None, page_options: dict = None
+        self,
+        db: Session,
+        url: str,
+        operation: str = "scrape",
+        formats: list = None,
+        page_options: dict = None,
     ) -> str:
         job_id = str(uuid4())
 
@@ -49,7 +53,12 @@ class JobManager:
         return job_id
 
     def update_job(
-        self, db: Session, job_id: str, status: str, result: Optional[Any] = None, error: Optional[str] = None
+        self,
+        db: Session,
+        job_id: str,
+        status: str,
+        result: Optional[Any] = None,
+        error: Optional[str] = None,
     ):
         try:
             job = db.query(Job).filter(Job.id == job_id).first()
@@ -68,7 +77,11 @@ class JobManager:
                 if isinstance(result, dict):
                     result = self._serialize_dict(result)
 
-                existing_content = db.query(ScrapedContent).filter(ScrapedContent.job_id == job_id).first()
+                existing_content = (
+                    db.query(ScrapedContent)
+                    .filter(ScrapedContent.job_id == job_id)
+                    .first()
+                )
                 if existing_content:
                     db.delete(existing_content)
 
@@ -101,7 +114,12 @@ class JobManager:
         }
 
         if job.status == "completed":
-            content = db.query(ScrapedContent).filter(ScrapedContent.job_id == job_id).first()
+            content = (
+                db.query(ScrapedContent).filter(ScrapedContent.job_id == job_id).first()
+            )
             if content:
-                result["result"] = {"metadata_content": content.metadata_content, "content": content.content}
+                result["result"] = {
+                    "metadata_content": content.metadata_content,
+                    "content": content.content,
+                }
         return result

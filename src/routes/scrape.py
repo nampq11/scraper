@@ -1,11 +1,11 @@
-from fastapi import APIRouter, BackgroundTasks, Query, Depends
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel, HttpUrl
-from uuid import uuid4
 from sqlalchemy.orm import Session
-from typing import List, Optional, Dict, Any
-from src.core.job_manager import JobManager
+
 from src.core.database import get_db
-from src.core.crawler import Crawler
+from src.core.job_manager import JobManager
 from src.core.scraper import Scraper
 
 router = APIRouter()
@@ -35,11 +35,15 @@ class BatchScrapeRequest(BaseModel):
     page_options: Optional[PageOptions] = PageOptions()
 
 
-async def background_scrape(job_id: str, url: str, formats: List[str], page_options: Dict):
+async def background_scrape(
+    job_id: str, url: str, formats: List[str], page_options: Dict
+):
     db = next(get_db())
     try:
         async with Scraper() as scraper:
-            result = await scraper.scrape(url=url, formats=formats, page_options=page_options)
+            result = await scraper.scrape(
+                url=url, formats=formats, page_options=page_options
+            )
 
             if result is None:
                 result = {
@@ -57,7 +61,10 @@ async def background_scrape(job_id: str, url: str, formats: List[str], page_opti
 
             normalized_result = {
                 "metadata": result.get("metadata", {}),
-                "content": {format_type: content for format_type, content in result.get("content", {}).items()},
+                "content": {
+                    format_type: content
+                    for format_type, content in result.get("content", {}).items()
+                },
             }
 
             if result.get("error"):
@@ -73,7 +80,11 @@ async def background_scrape(job_id: str, url: str, formats: List[str], page_opti
 
 
 @router.post("/async")
-async def start_scrape(request: ScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def start_scrape(
+    request: ScrapeRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     """
     Start an asynchronous scraping job.
 
@@ -106,7 +117,9 @@ async def start_scrape(request: ScrapeRequest, background_tasks: BackgroundTasks
 
 @router.post("/batch")
 async def start_batch_scrape(
-    request: BatchScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+    request: BatchScrapeRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
 ):
     """
     Start multiple scraping jobs in batch.
@@ -126,7 +139,11 @@ async def start_batch_scrape(
 
         job_ids.append(job_id)
         background_tasks.add_task(
-            background_scrape, job_id, url, request.formats, request.page_options.model_dump(exclude_unset=True)
+            background_scrape,
+            job_id,
+            url,
+            request.formats,
+            request.page_options.model_dump(exclude_unset=True),
         )
 
     return {"job_ids": job_ids, "total_jobs": len(job_ids), "status": "pending"}

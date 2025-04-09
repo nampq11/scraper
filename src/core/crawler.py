@@ -2,8 +2,9 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Set, Any
+from typing import Any, Dict, List, Optional, Set
 from urllib.parse import urljoin, urlparse
+
 from .scraper import Scraper
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,9 @@ class Crawler:
         """Exit the async context manager."""
         pass
 
-    def _is_same_domain(self, url1: str, url2: str, include_subdomains: bool = False) -> bool:
+    def _is_same_domain(
+        self, url1: str, url2: str, include_subdomains: bool = False
+    ) -> bool:
         """Check if two URLs belong to the same domain."""
         print("i'm here 3")
         parsed1 = urlparse(url1)
@@ -40,9 +43,7 @@ class Crawler:
     def _normalize_url(self, url: str) -> str:
         """Normalize a URL by removing fragments and trailing slashes."""
         parsed = urlparse(url)
-        return (
-            f"{parsed.scheme}://{parsed.netloc}{parsed.path.rstrip('/')}{'?' + parsed.query if parsed.query else ''}"
-        )
+        return f"{parsed.scheme}://{parsed.netloc}{parsed.path.rstrip('/')}{'?' + parsed.query if parsed.query else ''}"
 
     def _should_crawl(self, url: str, base_url: str, options: Dict) -> bool:
         """
@@ -61,7 +62,9 @@ class Crawler:
         if not url or not url.startswith(("http://", "https://")):
             return False
         include_subdomains = options.get("include_subdomains", False)
-        if not options.get("allow_backwards", False) and not self._is_same_domain(url, base_url, include_subdomains):
+        if not options.get("allow_backwards", False) and not self._is_same_domain(
+            url, base_url, include_subdomains
+        ):
             return False
 
         normalized = self._normalize_url(url)
@@ -73,7 +76,16 @@ class Crawler:
 
         path = urlparse(normalized).path
 
-        if any(p in path.lower() for p in ["/cdn-cgi/", "/wp-admin/", "/wp-includes/", "/assets/", "/static/"]):
+        if any(
+            p in path.lower()
+            for p in [
+                "/cdn-cgi/",
+                "/wp-admin/",
+                "/wp-includes/",
+                "/assets/",
+                "/static/",
+            ]
+        ):
             return False
 
         if options.get("exclude_paths"):
@@ -122,7 +134,9 @@ class Crawler:
             result = await scraper.scrape(
                 url=url,
                 formats=["markdown"],
-                page_options=options.get("page_options", {"include_links": True, "structured_json": True}),
+                page_options=options.get(
+                    "page_options", {"include_links": True, "structured_json": True}
+                ),
             )
 
             if result.get("error"):
@@ -196,7 +210,9 @@ class Crawler:
 
                 for current_url in current_urls:
                     print(f"Current URL: {current_url}")
-                    print(f"shoudl crawl: {self._should_crawl(current_url, url, options)}")
+                    print(
+                        f"shoudl crawl: {self._should_crawl(current_url, url, options)}"
+                    )
                     if not self._should_crawl(current_url, url, options):
                         continue
 
@@ -211,7 +227,11 @@ class Crawler:
                             formats=options.get("formats", ["markdown"]),
                             page_options=options.get(
                                 "page_options",
-                                {"extract_main_content": True, "include_links": True, "structured_json": True},
+                                {
+                                    "extract_main_content": True,
+                                    "include_links": True,
+                                    "structured_json": True,
+                                },
                             ),
                         )
 
@@ -226,8 +246,12 @@ class Crawler:
 
                             if result.get("links"):
                                 for link in result["links"]:
-                                    normalized_link = self._normalize_url(urljoin(current_url, link["url"]))
-                                    if self._should_crawl(normalized_link, url, options):
+                                    normalized_link = self._normalize_url(
+                                        urljoin(current_url, link["url"])
+                                    )
+                                    if self._should_crawl(
+                                        normalized_link, url, options
+                                    ):
                                         self.queue.add(normalized_link)
                     except Exception as e:
                         logger.error(f"Error scrapping {normalized}: {str(e)}")

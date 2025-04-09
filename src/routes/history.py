@@ -1,9 +1,11 @@
+from datetime import datetime, timedelta
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
-from src.core.database import get_db, Job, ScrapedContent
+
+from src.core.database import Job, ScrapedContent, get_db
 from src.core.job_manager import JobManager
-from datetime import datetime, timedelta
 
 router = APIRouter()
 job_manager = JobManager()
@@ -40,7 +42,9 @@ async def get_history(
                 "status": job.status,
                 "url": job.url,
                 "created_at": job.created_at.isoformat(),
-                "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+                "completed_at": job.completed_at.isoformat()
+                if job.completed_at
+                else None,
             }
             for job in jobs
         ],

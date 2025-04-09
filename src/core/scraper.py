@@ -4,7 +4,7 @@ import logging
 import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 import aiohttp
 import markdownify
@@ -28,13 +28,17 @@ class Scraper:
         self._session = None
         self._session_kwargs = {}
         self.ua = UserAgent()
-        self.default_headers = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
+        self.default_headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        }
 
     async def _get_session(self) -> aiohttp.ClientSession:
         """Create or reuse aiohttp session with random user agent."""
         if self._session is None:
             headers = {**self.default_headers, "User-Agent": self.ua.random}
-            self._session = aiohttp.ClientSession(headers=headers, **self._session_kwargs)
+            self._session = aiohttp.ClientSession(
+                headers=headers, **self._session_kwargs
+            )
         return self._session
 
     async def __aenter__(self):
@@ -53,7 +57,9 @@ class Scraper:
         markdown = re.sub(r"[ \t]+$", "", markdown, flags=re.MULTILINE)
 
         # Fix headers
-        markdown = re.sub(r"^(#+)\s*(.+?)[\s#]*$", r"\1 \2", markdown, flags=re.MULTILINE)
+        markdown = re.sub(
+            r"^(#+)\s*(.+?)[\s#]*$", r"\1 \2", markdown, flags=re.MULTILINE
+        )
 
         # Fix quotes
         markdown = re.sub(r'^"(.+?)"$', r"> \1", markdown, flags=re.MULTILINE)
@@ -63,7 +69,11 @@ class Scraper:
         markdown = re.sub(r"^\s*[-*+]\s*(.+)$", r"- \1", markdown, flags=re.MULTILINE)
 
         # Fix links
-        markdown = re.sub(r"\[(.*?)\]\(([^)]+)\)", lambda m: f"[{m.group(1).strip()}]({m.group(2).strip()})", markdown)
+        markdown = re.sub(
+            r"\[(.*?)\]\(([^)]+)\)",
+            lambda m: f"[{m.group(1).strip()}]({m.group(2).strip()})",
+            markdown,
+        )
 
         # Fix spacing around sections
         sections = markdown.split("\n\n")
@@ -95,7 +105,9 @@ class Scraper:
 
         return markdown
 
-    def _extract_metadata(self, soup: BeautifulSoup, url: str, final_url: str, status: int) -> Dict[str, Any]:
+    def _extract_metadata(
+        self, soup: BeautifulSoup, url: str, final_url: str, status: int
+    ) -> Dict[str, Any]:
         """Comprehensive metadata extraction with improve URL handling."""
         metadata = {
             "title": "",
@@ -122,16 +134,26 @@ class Scraper:
             metadata["title"] = title_tag.get_text(strip=True) if title_tag else ""
 
             html_tag = soup.find("html")
-            metadata["language"] = html_tag.get("lang", "").lower()[:5] if html_tag else ""
+            metadata["language"] = (
+                html_tag.get("lang", "").lower()[:5] if html_tag else ""
+            )
 
-            description_tag = soup.find("meta", attrs={"name": re.compile(r"description", re.I)})
-            metadata["description"] = description_tag.get("content", "").strip() if description_tag else ""
+            description_tag = soup.find(
+                "meta", attrs={"name": re.compile(r"description", re.I)}
+            )
+            metadata["description"] = (
+                description_tag.get("content", "").strip() if description_tag else ""
+            )
 
-            keywords_meta = soup.find("meta", attrs={"name": re.compile(r"keywords", re.I)})
+            keywords_meta = soup.find(
+                "meta", attrs={"name": re.compile(r"keywords", re.I)}
+            )
             if keywords_meta:
                 metadata["keywords"] = keywords_meta.get("content", "").strip()
 
-            viewport_meta = soup.find("meta", attrs={"name": re.compile(r"viewport", re.I)})
+            viewport_meta = soup.find(
+                "meta", attrs={"name": re.compile(r"viewport", re.I)}
+            )
             if viewport_meta:
                 metadata["viewport"] = viewport_meta.get("content", "").strip()
 
@@ -146,7 +168,9 @@ class Scraper:
                 if key == "type":
                     metadata["page_type"] = prop.get("content", "").strip()
 
-            twitter_meta = soup.find_all("meta", attrs={"name": re.compile(r"twitter:", re.I)})
+            twitter_meta = soup.find_all(
+                "meta", attrs={"name": re.compile(r"twitter:", re.I)}
+            )
             for meta in twitter_meta:
                 key = meta["name"][8:].lower()
                 metadata["twitter_data"][key] = meta.get("content", "").strip()
@@ -167,25 +191,34 @@ class Scraper:
 
         return metadata
 
-    async def _fetch_url(self, url: str, max_retries: int = 3, proxy: Optional[str] = None) -> tuple[str, str, int]:
+    async def _fetch_url(
+        self, url: str, max_retries: int = 3, proxy: Optional[str] = None
+    ) -> tuple[str, str, int]:
         """Fetch URL with retry logic and proper redirect handling using aiohttp."""
         session = await self._get_session()
         for attempt in range(max_retries):
             try:
                 async with session.get(
-                    url, allow_redirects=True, proxy=proxy, timeout=aiohttp.ClientTimeout(total=30)
+                    url,
+                    allow_redirects=True,
+                    proxy=proxy,
+                    timeout=aiohttp.ClientTimeout(total=30),
                 ) as response:
                     content = await response.text()
                     return content, str(response.url), response.status
             except (aiohttp.ClientConnectionError, aiohttp.ServerTimeoutError) as e:
                 if attempt == max_retries - 1:
-                    raise ScraperError(f"Connection error after {max_retries} attempts: {str(e)}")
+                    raise ScraperError(
+                        f"Connection error after {max_retries} attempts: {str(e)}"
+                    )
                 await asyncio.sleep(2**attempt)  # Exponential backoff
             except aiohttp.ClientError as e:
                 raise ScraperError(f"Client error: {str(e)}")
         raise ScraperError(f"Failed to fetch {url} after {max_retries} attempts")
 
-    async def _fetch_url_browser(self, url: str, page_options: Dict) -> tuple[str, str, int]:
+    async def _fetch_url_browser(
+        self, url: str, page_options: Dict
+    ) -> tuple[str, str, int]:
         """
         Fetch URL using Playwright for JavaScript rendering, smart wait, and actions.
         Expects page_options to potentially include:
@@ -232,14 +265,19 @@ class Scraper:
         await browser.close()
         return content, final_url, status
 
-    def _generate_formats(self, soup: BeautifulSoup, formats: List[str], page_options: Dict) -> Dict[str, Any]:
+    def _generate_formats(
+        self, soup: BeautifulSoup, formats: List[str], page_options: Dict
+    ) -> Dict[str, Any]:
         """Generate content in requested formats with improved HTML processing."""
         result = {}
         processed_html = str(soup)
 
         if "markdown" in formats:
             markdown = markdownify.markdownify(
-                processed_html, heading_style="ATX", bullets=["•", "◦", "▪"], default_title=False
+                processed_html,
+                heading_style="ATX",
+                bullets=["•", "◦", "▪"],
+                default_title=False,
             )
             if page_options.get("clean_markdown", True):
                 markdown = self._clean_markdown(markdown)
@@ -254,7 +292,9 @@ class Scraper:
 
         return result
 
-    async def scrape(self, url: str, formats: List[str] = None, page_options: Dict = None) -> Dict[str, Any]:
+    async def scrape(
+        self, url: str, formats: List[str] = None, page_options: Dict = None
+    ) -> Dict[str, Any]:
         """Enhanced scraping method with improved content selection, JS rendering, and structured JSON output."""
         formats = formats or ["markdown"]
         page_options = page_options or {}
@@ -282,7 +322,9 @@ class Scraper:
             try:
                 if use_browser:
                     logger.debug("Starting browser fetch")
-                    content, final_url, status = await self._fetch_url_browser(url, page_options)
+                    content, final_url, status = await self._fetch_url_browser(
+                        url, page_options
+                    )
                 else:
                     logger.debug("Starting direct fetch")
                     content, final_url, status = await self._fetch_url(
@@ -297,12 +339,16 @@ class Scraper:
 
                 soup = BeautifulSoup(content, "lxml")
 
-                for tag in page_options.get("exclude_tags", ["script", "style", "noscript"]):
+                for tag in page_options.get(
+                    "exclude_tags", ["script", "style", "noscript"]
+                ):
                     for element in soup.find_all(tag):
                         element.decompose()
 
                 if page_options.get("extract_main_content"):
-                    css_selector = page_options.get("main_content_selector", "main, article, .main-content")
+                    css_selector = page_options.get(
+                        "main_content_selector", "main, article, .main-content"
+                    )
                     main_content = soup.select_one(css_selector)
                     if main_content:
                         soup = BeautifulSoup(main_content, "lxml")
@@ -330,7 +376,10 @@ class Scraper:
                             }
                         )
 
-                result["json"] = {"metadata": result["metadata"], "content": result["content"]}
+                result["json"] = {
+                    "metadata": result["metadata"],
+                    "content": result["content"],
+                }
             except Exception as e:
                 logger.error(f"Content processing error: {str(e)}")
                 result["metadata"]["error"] = f"Content processing failed: {str(e)}"
@@ -356,7 +405,11 @@ class Scraper:
             return result
 
     async def scrape_batch(
-        self, urls: List[str], formats: List[str] = None, page_options: Dict = None, concurrency: int = 5
+        self,
+        urls: List[str],
+        formats: List[str] = None,
+        page_options: Dict = None,
+        concurrency: int = 5,
     ) -> Dict[str, dict]:
         """Batch scraping with improved concurrency control."""
         results = {}

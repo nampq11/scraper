@@ -1,4 +1,1 @@
-# This file marks the src directory as a Python package.
-from . import main
-
-__all__ = ["main"]
+# This file is intentionally empty to make the directory a Python package

@@ -1,8 +1,6 @@
-import asyncio
 import logging
-import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Set
 from urllib.parse import urljoin, urlparse
 
 from .scraper import Scraper
